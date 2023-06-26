@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Telegram.Bot.Types.ReplyMarkups;
 using ConsoleApp1.Models;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace ConsoleApp1
 {
@@ -16,7 +17,8 @@ namespace ConsoleApp1
         public static List<Products> products;
         public static List<History> histories;
         static int state;
-        
+        static int DelState;
+
         static void Main(string[] args)
         {
             dbconnect = new dbConnect();
@@ -48,7 +50,7 @@ namespace ConsoleApp1
 
                 var massage = update.Message;
                 string TextMassege = update.Message.Text ?? "";
-                ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] { new KeyboardButton[] { "Записати", "Показати записи" }, })
+                ReplyKeyboardMarkup replyKeyboardMarkup = new(new[] { new KeyboardButton[] { "Записати", "Показати записи","Видалити запис" }, })
                 {
                     ResizeKeyboard = true
                 };
@@ -56,6 +58,7 @@ namespace ConsoleApp1
                 {
                     ResizeKeyboard = true
                 };
+
                 ReplyKeyboardMarkup potato = new(new[] { new KeyboardButton[] { "Головна" }, })
                 {
                     ResizeKeyboard = true
@@ -79,7 +82,7 @@ namespace ConsoleApp1
                     Console.WriteLine($"{massage.Chat.FirstName} | {massage.Text}");
                     if (massage.Text.Contains("/start"))
                     {
-                        await botClient.SendTextMessageAsync(massage.Chat.Id, "ХАЙ", replyMarkup: replyKeyboardMarkup);
+                        await botClient.SendTextMessageAsync(massage.Chat.Id, "ХАЙ " + massage.Chat.FirstName, replyMarkup: replyKeyboardMarkup);
                         return;
                     }
                     if (massage.Text.Contains("Записати"))
@@ -142,6 +145,71 @@ namespace ConsoleApp1
                         List<History> sort = new List<History>();
                         sort = dbconnect.History.ToList();
                         sortHistory = (from a in sort where a.ProductId == products[0].id select a).ToList();
+                        if (sortHistory.Count == 0)
+                        {
+                            await botClient.SendTextMessageAsync(massage.Chat.Id, "Немає данів", replyMarkup: replyKeyboardMarkup);
+                            return;
+                        }
+                        else
+                        {
+                            for (int i = 0; i < sortHistory.Count; i++)
+                            {
+                                List<Client> Sortclients = new List<Client>();
+                                Sortclients = (from a in clients where a.id == sortHistory[i].ClientId select a).ToList();
+                                await botClient.SendTextMessageAsync(massage.Chat.Id, i +
+                                    "\nІмя: " + Sortclients[0].Name +
+                                    "\nДата: " + sortHistory[i].DateParches +
+                                    "\nЦіна за кг: " + sortHistory[i].ProductPrice +
+                                    "\nВага: " + sortHistory[i].Totalweight +
+                                    "\nЗагалбна сума: " + sortHistory[i].TotalAmoung +
+                                    "\nID = " + sortHistory[i].id, replyMarkup: replyKeyboardMarkup);
+                            }
+                            return;
+                        }
+                    }
+                    if (massage.Text.Contains("Записи по цибулі"))
+                    {
+                        List<History> sortHistory = new List<History>();
+                        List<Client> clients = new List<Client>();
+                        clients = dbconnect.Client.ToList();
+                        List<History> sort = new List<History>();
+                        sort = dbconnect.History.ToList();
+                        sortHistory = (from a in sort where a.ProductId == products[1].id select a).ToList();
+                        if (sortHistory.Count == 0)
+                        {
+                            await botClient.SendTextMessageAsync(massage.Chat.Id, "Немає данів", replyMarkup: replyKeyboardMarkup);
+                            return;
+                        }
+                        else
+                        {
+                            for (int i = 0; i < sortHistory.Count; i++)
+                            {
+                                List<Client> Sortclients = new List<Client>();
+                                Sortclients = (from a in clients where a.id == sortHistory[i].ClientId select a).ToList();
+                                await botClient.SendTextMessageAsync(massage.Chat.Id, i +
+                                    "\nІмя: " + Sortclients[0].Name +
+                                    "\nДата: " + sortHistory[i].DateParches +
+                                    "\nЦіна за кг: " + sortHistory[i].ProductPrice +
+                                    "\nВага: " + sortHistory[i].Totalweight +
+                                    "\nЗагалбна сума: " + sortHistory[i].TotalAmoung, replyMarkup: replyKeyboardMarkup);
+                            }
+                            return;
+                        }
+                    }
+                    if (massage.Text.Contains("Записи по моркві"))
+                    {
+                        List<History> sortHistory = new List<History>();
+                        List<Client> clients = new List<Client>();
+                        clients = dbconnect.Client.ToList();
+                        List<History> sort = new List<History>();
+                        sort = dbconnect.History.ToList();
+                        sortHistory = (from a in sort where a.ProductId == products[2].id select a).ToList();
+                        if (sortHistory.Count == 0)
+                        {
+                            await botClient.SendTextMessageAsync(massage.Chat.Id, "Немає данів", replyMarkup: replyKeyboardMarkup);
+                            return;
+                        }
+                        else { 
                         for (int i = 0; i < sortHistory.Count; i++)
                         {
                             List<Client> Sortclients = new List<Client>();
@@ -151,27 +219,31 @@ namespace ConsoleApp1
                                 "\nДата: " + sortHistory[i].DateParches +
                                 "\nЦіна за кг: " + sortHistory[i].ProductPrice +
                                 "\nВага: " + sortHistory[i].Totalweight +
-                                "\nЗагалбна сума:" + sortHistory[i].TotalAmoung, replyMarkup: replyKeyboardMarkup);
+                                "\nЗагалбна сума: " + sortHistory[i].TotalAmoung, replyMarkup: replyKeyboardMarkup);
                         }
                         return;
-                    }
-                    if (massage.Text.Contains("Записи по цибулі"))
-                    {
-
-                    }
-                    if (massage.Text.Contains("Записи по моркві"))
-                    {
-
-                    }
-                    string ask = "покажи всіх";
-                    if (massage.Text.ToLower().Contains(ask))
-                    {
-                        for (int i = 0; i < clients.Count; i++)
-                        {
-                            await botClient.SendTextMessageAsync(massage.Chat.Id, i + " " + clients[i].Name, replyMarkup: replyKeyboardMarkup);
                         }
+                    }
+                    if (massage.Text.Contains("Видалити запис"))
+                    { 
+                        await botClient.SendTextMessageAsync(massage.Chat.Id, "Введіть Id накладної\n____________________ \n Приклад введення:\nID = 13",null);
+                        return; 
+                    }
+                    if (massage.Text.ToLower().Contains("id"))
+                    {
+                       
+                                List<History> PH = new List<History>();
+                                PH = dbconnect.History.ToList();
+                                string[] arr = massage.Text.Split('=');
+                                PH = (from a in PH where a.id == int.Parse(arr[1]) select a).ToList();
 
-                        return;
+                                dbconnect.History.Remove(PH[0]);
+                                dbconnect.SaveChangesAsync();
+                                await botClient.SendTextMessageAsync(massage.Chat.Id, "Накладна була видаленна", replyMarkup: replyKeyboardMarkup);
+                                return;
+                             
+                                
+                        
                     }
                 }
                 else return;
